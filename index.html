@@ -38,13 +38,13 @@ tr.foot td.hc{font-size:15px}
 .dev input{min-width:170px;flex:1;max-width:260px}
 .dev span{margin-left:auto;color:#6d5b57}
 td.dim{opacity:.15}
-.dev span{display:none}body.test .dev span{display:block}
+
 .note{background:#fff3cd;color:#664d03;font-size:13px;padding:6px 10px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-<div class="dev"><input id="q" type="search" placeholder="Filter by name..." autocomplete="off"><select id="mode"><option value="all">All</option><option value="off">OFF only</option><option value="work">Working only</option></select><span>Test date: <select id="sim"></select></span></div>
+<div class="dev"><input id="q" type="search" placeholder="Filter by name..." autocomplete="off"><select id="mode"><option value="all">All</option><option value="off">OFF only</option><option value="work">Working only</option></select><span>Date: <select id="sim"></select></span></div>
 <div id="note"></div>
 <div class="wrap"><table id="tb"></table></div>
 <script>
@@ -57,7 +57,7 @@ function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2])}
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function fmt(s){var p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0]}
 var simEl=document.getElementById("sim");
-function fillSim(){simEl.innerHTML='<option value="">Real today</option>'+DATA.dates.map(function(d){return '<option value="'+d+'">'+DN[pd(d).getDay()]+" "+fmt(d)+"</option>"}).join("")}
+function fillSim(){simEl.innerHTML='<option value="">Today</option>'+DATA.dates.map(function(d){return '<option value="'+d+'">'+DN[pd(d).getDay()]+" "+fmt(d)+"</option>"}).join("")}
 fillSim();
 simEl.onchange=function(){sim=simEl.value||null;render()};
 
