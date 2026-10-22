@@ -86,7 +86,7 @@ function parseWB(wb,X){
     var ws=wb.Sheets[name];
     function g(r,c){var x=ws[X.utils.encode_cell({r:r-1,c:c-1})];return x&&x.v!=null?x.v:null}
     var ds={},first=null;
-    for(var c=3;c<=10;c++){var d=pdate(g(3,c));if(d){ds[c]=d;if(!first||d<first)first=d}}
+    for(var c=3;c<=40;c++){var d=pdate(g(3,c));if(d){ds[c]=d;if(!first||d<first)first=d}}
     if(!first)return;
     var rows=[];
     for(var r=5;;r++){
@@ -95,7 +95,7 @@ function parseWB(wb,X){
       var parts=String(b).replace(/\u00a0/g," ").split(/\r?\n/).map(function(x){return x.trim()});
       var idv=g(r,1),id=(idv!=null&&/^\d+$/.test(String(idv).trim()))?String(idv).trim():"";
       var cells={};
-      for(var c2=3;c2<=10;c2++){var v=pcell(g(r,c2));if(v!==undefined&&ds[c2])cells[ds[c2]]=v}
+      for(var c2=3;c2<=40;c2++){var v=pcell(g(r,c2));if(v!==undefined&&ds[c2])cells[ds[c2]]=v}
       rows.push({n:parts[0],t:parts[1]||"",ph:parts[2]||"",id:id,c:cells});
     }
     sheets.push({first:first,ds:ds,rows:rows});
