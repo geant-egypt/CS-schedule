@@ -10,17 +10,17 @@
 html,body{height:100%;margin:0;background:#fff8f0;font-family:Arial,Helvetica,sans-serif;color:#222}
 body{display:flex;flex-direction:column}
 .wrap{flex:1;overflow:auto}
-table{border-collapse:collapse;width:100%;height:100%;min-width:760px;table-layout:fixed}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:760px;table-layout:fixed}
 th,td{border:1px solid #b89a96;text-align:center;padding:4px 3px}
-.logo{background:#fff;text-align:left;width:200px;padding:1px 8px;vertical-align:middle;border-bottom:3px solid #d4141c}
+.logo{position:sticky;left:0;top:0;z-index:5;background:#fff;text-align:left;width:200px;padding:1px 8px;vertical-align:middle;border-bottom:3px solid #d4141c}
 .logo div{display:flex;align-items:center;gap:8px}
 .logo img{height:26px;width:auto;display:block}
 .logo small{display:block;font-weight:bold;font-size:9px;line-height:1.15;color:#d4141c}
-.dh{background:#d4141c;color:#fff;border-color:#9e0b12;border-top:3px solid #fff;padding:1px 3px}
+.dh{width:130px;position:sticky;top:0;z-index:3;background:#d4141c;color:#fff;border-color:#9e0b12;border-top:3px solid #fff;padding:1px 3px}
 .dh.today{border-top-color:#f39200;background:#a30c13}
 .dh b{display:block;font-size:11px;line-height:1.2}.dh span{display:block;font-size:10px;font-weight:bold;line-height:1.2}
-.idc{background:#d4141c;color:#fff;font-weight:bold;width:62px;font-size:11px;padding:1px 3px}
-.who{width:200px;background:#fbd9d6;border-right:5px solid #d4141c}
+.idc{position:sticky;left:200px;z-index:2;background:#d4141c;color:#fff;font-weight:bold;width:62px;font-size:11px;padding:1px 3px}
+.who{position:sticky;left:0;z-index:2;width:200px;background:#fbd9d6;border-right:5px solid #d4141c}
 .who b{display:block;font-size:13px}.who .t{display:block;color:#b50d14;font-weight:bold;font-size:12px}.who .ph{display:block;color:#5b4a48;font-size:11px;font-weight:bold}
 td.c{font-size:13px;font-weight:bold;background:#fff1e0;height:90px}
 td.c small{display:block;color:#6d5b57;font-size:12px;font-weight:normal;margin:3px 0}
@@ -39,6 +39,9 @@ tr.foot td.hc{font-size:15px}
 .dev span{margin-left:auto;color:#6d5b57}
 td.dim{opacity:.15}
 table tr:first-child th{height:1px}
+th.idc{top:0;z-index:5}
+tr.foot td.hc{position:sticky;left:0;z-index:2}
+td.c{height:90px}
 
 .dl{font:inherit;padding:4px 10px;border:1px solid #9e0b12;border-radius:6px;background:#d4141c;color:#fff;text-decoration:none;font-weight:bold;white-space:nowrap}
 .note{background:#fff3cd;color:#664d03;font-size:13px;padding:6px 10px}
@@ -61,7 +64,7 @@ function fmt(s){var p=s.split("-");return p[2]+"/"+p[1]+"/"+p[0]}
 var simEl=document.getElementById("sim");
 function fillSim(){simEl.innerHTML='<option value="">Today</option>'+DATA.dates.map(function(d){return '<option value="'+d+'">'+DN[pd(d).getDay()]+" "+fmt(d)+"</option>"}).join("")}
 fillSim();
-simEl.onchange=function(){sim=simEl.value||null;render()};
+simEl.onchange=function(){sim=simEl.value||null;render(true)};
 
 function pdate(v){
   if(typeof v==="number"){var d=new Date(Math.round((v-25569)*86400000));return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")}
@@ -119,29 +122,29 @@ function loadExcel(){
   fetch("CS_Schedule.xlsx?v="+Date.now()).then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()}).then(function(buf){
     var d=parseWB(XLSX.read(buf,{type:"array"}),XLSX);
     if(!d.dates.length||!d.staff.length)throw 0;
-    DATA=d;fillSim();render();
+    DATA=d;fillSim();render(true);
   }).catch(function(){});
 }
-function render(){
+function render(go){
   var q=document.getElementById("q").value.trim().toLowerCase(),mode=document.getElementById("mode").value;
   var t=sim||iso(new Date()),D=DATA.dates,idx=-1,note="";
   for(var i=0;i<D.length;i++) if(D[i]>=t){idx=i;break}
   if(idx<0){idx=D.length-1;note="This schedule has ended. Please update it for the new week."}
   else if(D[idx]!==t) note=idx===0?"Today is before this schedule starts, showing from the first day.":"No schedule for today, showing the next available day.";
-  var V=D.slice(idx,idx+8),isToday=!note;
+  var V=D,W=D.slice(idx,idx+8),isToday=!note,cur=D[idx];
   document.getElementById("note").innerHTML=note?'<div class="note">'+note+'</div>':"";
   var h='<tr><th class="logo"><div><img alt="Géant" src="'+LOGO+'"><small>Customer Service Department Schedule</small></div></th><th class="idc" style="background:#d4141c;border-top:3px solid #fff">ID</th>';
-  V.forEach(function(d,k){h+='<th class="dh'+(k===0&&isToday?" today":"")+'"><b>'+DN[pd(d).getDay()]+"</b><span>"+fmt(d)+"</span></th>"});
+  V.forEach(function(d,k){h+='<th class="dh'+(d===cur&&isToday?" today":"")+'"><b>'+DN[pd(d).getDay()]+"</b><span>"+fmt(d)+"</span></th>"});
   h+="</tr>";
   DATA.staff.forEach(function(s){
     if(s.hidden&&!unlocked)return;
     if(q&&s.n.toLowerCase().indexOf(q)<0)return;
     var hasOff=false,hasWork=false;
-    V.forEach(function(d){var c=s.c[d];if(c==="O")hasOff=true;else if(c)hasWork=true});
+    W.forEach(function(d){var c=s.c[d];if(c==="O")hasOff=true;else if(c)hasWork=true});
     if((mode==="off"&&!hasOff)||(mode==="work"&&!hasWork))return;
     h+='<tr><td class="who"><b>'+s.n+'</b><span class="t">'+s.t+'</span><span class="ph">'+s.ph+'</span></td><td class="idc">'+s.id+"</td>";
     V.forEach(function(d,k){
-      var c=s.c[d],dim=((mode==="off"&&c!=="O")||(mode==="work"&&(c==="O"||!c)))?" dim":"",now=((k===0&&isToday)?" now":"")+dim;
+      var c=s.c[d],dim=((mode==="off"&&c!=="O")||(mode==="work"&&(c==="O"||!c)))?" dim":"",now=((d===cur&&isToday)?" now":"")+dim;
       if(!c) h+='<td class="c'+now+'"></td>';
       else if(c==="O") h+='<td class="c O'+now+'"><span>OFF</span></td>';
       else h+='<td class="c '+c[2]+now+'">'+c[0]+"<small>"+c[1]+"</small><em>( "+c[2]+" )</em></td>";
@@ -155,7 +158,10 @@ function render(){
     function line(n){var o=k[n]||{},L=["M","N"];Object.keys(labs).forEach(function(x){if(L.indexOf(x)<0)L.push(x)});return n+" : "+L.map(function(x){return (o[x]||0)+" "+x}).join(" - ")}
     h+="<td>"+hc+"<br>"+line("TRI")+"<br>"+line("REH")+"</td>";
   });
+  var tbl=document.getElementById("tb");while(tbl&&tbl.tagName!=="TABLE")tbl=tbl.parentNode;
   document.getElementById("tb").innerHTML=h+"</tr>";
+  if(tbl)tbl.style.minWidth=(262+V.length*130)+"px";
+  if(go===true){var w=document.querySelector(".wrap"),th=document.querySelector("th.dh.today")||document.querySelectorAll("th.dh")[idx];if(w&&th)w.scrollLeft=Math.max(0,th.offsetLeft-262)}
 }
 document.getElementById("mode").onchange=render;
 document.getElementById("q").oninput=function(){
@@ -170,7 +176,7 @@ document.getElementById("q").oninput=function(){
   render();
 };
 if(location.search.indexOf("test")>=0)document.body.classList.add("test");
-render();
+render(true);
 loadExcel();
 
 </script>
