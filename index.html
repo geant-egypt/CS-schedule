@@ -44,12 +44,13 @@ tr.foot td.hc{position:sticky;left:0;z-index:2}
 td.c{height:90px}
 
 .dl{font:inherit;padding:4px 10px;border:1px solid #9e0b12;border-radius:6px;background:#d4141c;color:#fff;text-decoration:none;font-weight:bold;white-space:nowrap}
+.mask{-webkit-text-security:disc;text-security:disc}
 .note{background:#fff3cd;color:#664d03;font-size:13px;padding:6px 10px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-<div class="dev"><input id="q" type="search" placeholder="Filter by name..." autocomplete="off"><select id="mode"><option value="all">All</option><option value="off">OFF only</option><option value="work">Working only</option></select><a class="dl" href="CS_Schedule.xlsx" download="CS_Schedule.xlsx">Download Excel</a><span>Date: <select id="sim"></select></span></div>
+<div class="dev"><input id="q" type="search" placeholder="Filter by name..." autocomplete="off"><select id="mode"><option value="all">All</option><option value="off">OFF only</option><option value="work">Working only</option></select><a class="dl" id="dl" href="CS_Schedule.xlsx" download="CS_Schedule.xlsx" style="display:none">Download Excel</a><span>Date: <select id="sim"></select></span></div>
 <div id="note"></div>
 <div class="wrap"><table id="tb"></table></div>
 <script>
@@ -126,7 +127,8 @@ function loadExcel(){
   }).catch(function(){});
 }
 function render(go){
-  var q=document.getElementById("q").value.trim().toLowerCase(),mode=document.getElementById("mode").value;
+  var dlb=document.getElementById("dl");if(dlb)dlb.style.display=unlocked?"":"none";
+  var q=masked?"":document.getElementById("q").value.trim().toLowerCase(),mode=document.getElementById("mode").value;
   var t=sim||iso(new Date()),D=DATA.dates,idx=-1,note="";
   for(var i=0;i<D.length;i++) if(D[i]>=t){idx=i;break}
   if(idx<0){idx=D.length-1;note="This schedule has ended. Please update it for the new week."}
@@ -164,16 +166,18 @@ function render(go){
   if(go===true){var w=document.querySelector(".wrap"),th=document.querySelector("th.dh.today")||document.querySelectorAll("th.dh")[idx];if(w&&th)w.scrollLeft=Math.max(0,th.offsetLeft-262)}
 }
 document.getElementById("mode").onchange=render;
+var PH=["08f271887ce94707da822d5263bae19d5519cb3614e0daedc4c7ce5dab7473f1", "d30af076b0dc85cc5b0074b403f74770b73af84a70c2f77f7a3609d0db23112e", "d66f151aaeaf3888976bfbdbe081522a8c703d43d0bd826d749037f256ac75d4", "5622dc3d65c64552cc61f1bcd1c53cda21ae3d22413f8559638ab7774df5ca90", "21274009e6fdae7c2025b185c6e36f38103d05e2073a2535c4efdf7a058006ca", "6892669253d3479ceed6f33ceeca20e9d6cd48572ecdb01fa1023be69af907b5", "d921eacb229e5962b0a0b6dcaa875332f1b0d13586c428c74ff6b12f2ea11a17", "66df36f21b0fb71dd34c42d32c27e4f6e61eb54db822edfddcbc8cba414f1d9c", "2c602a0b813fffea18f6f6f8ff16fb1a135e043452b40d416128591b4bd34b1d", "2c61293e39cab9601cc9eff3f67d8c83da5bb704ececf764ba7781d9e6aa2e1e", "35e693509907c780572a7f862024f4f4f7b77bd471912ce7004eb8ab56c1151e", "436e54903572456536c2af24700948e679f5fc7ea455dcdf513771ab2e42629f", "858f0fe7991d51b19461fc41f91623495b7b996d003671ca72c5f8eeea60bc48", "0ddeec7f14afb55d0baf6f6bdd5565b089a8b98ae6bdb4ab78ce0dc7b6b4ea3d", "9d7cb390f33b9421b72ecb3dba3df423d06220724de1dbda1cfbbcbf71812c69", "0331a0df393b1989d7a6325cd3eec2ab7a6cd0fe35a7612a5188a4585cfebb8f", "60af88efd3e255b1328a3bc54e626e3173fd58c9a0db4834e22900cab86e1893"],masked=false;
+function sha(v){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return x.toString(16).padStart(2,"0")}).join("")})}
 document.getElementById("q").oninput=function(){
   var el=this,v=el.value;
-  if(window.crypto&&crypto.subtle&&v.length>=10){
-    crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)).then(function(b){
-      var hex=Array.prototype.map.call(new Uint8Array(b),function(x){return x.toString(16).padStart(2,"0")}).join("");
-      if(hex===H){unlocked=!unlocked;el.value="";}
-      render();
-    });
-  }
-  render();
+  if(!(window.crypto&&crypto.subtle)||!v||v.length>PH.length){masked=false;el.classList.remove("mask");render();return}
+  sha(v).then(function(hex){
+    if(el.value!==v)return;
+    masked=(hex===PH[v.length-1]);
+    if(hex===H){unlocked=!unlocked;el.value="";masked=false}
+    el.classList.toggle("mask",masked);
+    render();
+  });
 };
 if(location.search.indexOf("test")>=0)document.body.classList.add("test");
 render(true);
