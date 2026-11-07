@@ -78,9 +78,15 @@ function pcell(v){
   if(!s)return undefined;
   if(/^off$/i.test(s))return "O";
   var p=s.split(/\r?\n/).map(function(x){return x.trim()});
-  if(p.length<3)return {x:s};
-  var m=p[0].match(/(\d+)\s*([AP]M)\s*-\s*(\d+)\s*([AP]M)/i);
-  if(!m)return {x:s};
+  var m=s.match(/(\d+)\s*([AP]M)\s*-\s*(\d+)\s*([AP]M)/i);
+  var tt=s.match(/\b(TRI|REH)\b/i),ty=tt?tt[1].toUpperCase():"";
+  if(!m)return ty?{x:s,k:ty}:{x:s};
+  if(p.length<3||!p[2].match(/\((\w+)\)/)){
+    if(!ty)return {x:s};
+    var lb=s.match(/(Morning|Night|Between|Full\s*Day|Training)/i),h0=+m[1],pm0=m[2].toUpperCase();
+    var lab=lb?lb[1]:(pm0==="AM"&&h0===8?"Morning":(pm0==="PM"&&h0===4?"Night":(pm0==="PM"&&h0===12?"Between":"Shift")));
+    return [m[1]+" "+m[2].toUpperCase()+" - "+m[3]+" "+m[4].toUpperCase(),lab,ty];
+  }
   var t=p[2].match(/\((\w+)\)/);
   return [m[1]+" "+m[2].toUpperCase()+" - "+m[3]+" "+m[4].toUpperCase(),p[1],t?t[1].toUpperCase():""];
 }
@@ -150,7 +156,7 @@ function render(go){
     V.forEach(function(d,k){
       var c=s.c[d],dim=((mode==="off"&&!isOff(c))||(mode==="work"&&(isOff(c)||!c)))?" dim":"",now=((d===cur&&isToday)?" now":"")+dim;
       if(!c) h+='<td class="c'+now+'"></td>';
-      else if(c.x!==undefined) h+='<td class="c O'+now+'"><span>'+esc(c.x)+'</span></td>';
+      else if(c.x!==undefined) h+=c.k?'<td class="c '+c.k+now+'">'+esc(c.x)+'</td>':'<td class="c O'+now+'"><span>'+esc(c.x)+'</span></td>';
       else if(c==="O") h+='<td class="c O'+now+'"><span>OFF</span></td>';
       else h+='<td class="c '+c[2]+now+'">'+c[0]+"<small>"+c[1]+"</small><em>( "+c[2]+" )</em></td>";
     });
