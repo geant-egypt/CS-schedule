@@ -72,11 +72,13 @@ function pdate(v){
   var m=String(v==null?"":v).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   return m?m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0"):null;
 }
+var CODEBG={SL:"#ffff00",V:"#92d050"};
 function pcell(v){
   if(v==null)return undefined;
   var s=String(v).replace(/\u00a0/g," ").trim();
   if(!s)return undefined;
   if(/^off$/i.test(s))return "O";
+  var cb=CODEBG[s.toUpperCase()];if(cb)return {x:s,bg:cb};
   var p=s.split(/\r?\n/).map(function(x){return x.trim()});
   var m=s.match(/(\d+)\s*([AP]M)\s*-\s*(\d+)\s*([AP]M)/i);
   var tt=s.match(/\b(TRI|REH)\b/i),ty=tt?tt[1].toUpperCase():"";
@@ -156,7 +158,7 @@ function render(go){
     V.forEach(function(d,k){
       var c=s.c[d],dim=((mode==="off"&&!isOff(c))||(mode==="work"&&(isOff(c)||!c)))?" dim":"",now=((d===cur&&isToday)?" now":"")+dim;
       if(!c) h+='<td class="c'+now+'"></td>';
-      else if(c.x!==undefined) h+=c.k?'<td class="c '+c.k+now+'">'+esc(c.x)+'</td>':'<td class="c O'+now+'"><span>'+esc(c.x)+'</span></td>';
+      else if(c.x!==undefined) h+=c.bg?'<td class="c'+now+'" style="background:'+c.bg+'">'+esc(c.x)+'</td>':c.k?'<td class="c '+c.k+now+'">'+esc(c.x)+'</td>':'<td class="c O'+now+'"><span>'+esc(c.x)+'</span></td>';
       else if(c==="O") h+='<td class="c O'+now+'"><span>OFF</span></td>';
       else h+='<td class="c '+c[2]+now+'">'+c[0]+"<small>"+c[1]+"</small><em>( "+c[2]+" )</em></td>";
     });
