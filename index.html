@@ -78,9 +78,9 @@ function pcell(v){
   if(!s)return undefined;
   if(/^off$/i.test(s))return "O";
   var p=s.split(/\r?\n/).map(function(x){return x.trim()});
-  if(p.length<3)return undefined;
+  if(p.length<3)return {x:s};
   var m=p[0].match(/(\d+)\s*([AP]M)\s*-\s*(\d+)\s*([AP]M)/i);
-  if(!m)return undefined;
+  if(!m)return {x:s};
   var t=p[2].match(/\((\w+)\)/);
   return [m[1]+" "+m[2].toUpperCase()+" - "+m[3]+" "+m[4].toUpperCase(),p[1],t?t[1].toUpperCase():""];
 }
@@ -126,6 +126,8 @@ function loadExcel(){
     DATA=d;fillSim();render(true);
   }).catch(function(){});
 }
+function isOff(c){return c==="O"||(c&&c.x!==undefined)}
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>")}
 function render(go){
   var dlb=document.getElementById("dl");if(dlb)dlb.style.display=unlocked?"":"none";
   var q=masked?"":document.getElementById("q").value.trim().toLowerCase(),mode=document.getElementById("mode").value;
@@ -142,12 +144,13 @@ function render(go){
     if(s.hidden&&!unlocked)return;
     if(q&&s.n.toLowerCase().indexOf(q)<0)return;
     var hasOff=false,hasWork=false;
-    W.forEach(function(d){var c=s.c[d];if(c==="O")hasOff=true;else if(c)hasWork=true});
+    W.forEach(function(d){var c=s.c[d];if(isOff(c))hasOff=true;else if(c)hasWork=true});
     if((mode==="off"&&!hasOff)||(mode==="work"&&!hasWork))return;
     h+='<tr><td class="who"><b>'+s.n+'</b><span class="t">'+s.t+'</span><span class="ph">'+s.ph+'</span></td><td class="idc">'+s.id+"</td>";
     V.forEach(function(d,k){
-      var c=s.c[d],dim=((mode==="off"&&c!=="O")||(mode==="work"&&(c==="O"||!c)))?" dim":"",now=((d===cur&&isToday)?" now":"")+dim;
+      var c=s.c[d],dim=((mode==="off"&&!isOff(c))||(mode==="work"&&(isOff(c)||!c)))?" dim":"",now=((d===cur&&isToday)?" now":"")+dim;
       if(!c) h+='<td class="c'+now+'"></td>';
+      else if(c.x!==undefined) h+='<td class="c O'+now+'"><span>'+esc(c.x)+'</span></td>';
       else if(c==="O") h+='<td class="c O'+now+'"><span>OFF</span></td>';
       else h+='<td class="c '+c[2]+now+'">'+c[0]+"<small>"+c[1]+"</small><em>( "+c[2]+" )</em></td>";
     });
@@ -156,7 +159,7 @@ function render(go){
   h+='<tr class="foot"><td colspan="2" class="hc">H.C: &nbsp; &nbsp;</td>';
   V.forEach(function(d){
     var k={TRI:{},REH:{}},hc=0,labs={};
-    DATA.staff.forEach(function(s){var c=s.c[d];if(c&&c!=="O"){var L=c[1].charAt(0).toUpperCase();k[c[2]]=k[c[2]]||{};k[c[2]][L]=(k[c[2]][L]||0)+1;labs[L]=1;hc++}});
+    DATA.staff.forEach(function(s){var c=s.c[d];if(c&&!isOff(c)){var L=c[1].charAt(0).toUpperCase();k[c[2]]=k[c[2]]||{};k[c[2]][L]=(k[c[2]][L]||0)+1;labs[L]=1;hc++}});
     function line(n){var o=k[n]||{},L=["M","N"];Object.keys(labs).forEach(function(x){if(L.indexOf(x)<0)L.push(x)});return n+" : "+L.map(function(x){return (o[x]||0)+" "+x}).join(" - ")}
     h+="<td>"+hc+"<br>"+line("TRI")+"<br>"+line("REH")+"</td>";
   });
